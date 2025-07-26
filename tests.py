@@ -11,6 +11,3 @@ print(get_files_info("calculator", "/bin"))
 
 print("Result for '../' directory:")
 print(get_files_info("calculator", "../"))
-
-print("Result for 'test' directory:")
-print(get_files_info("calculator", "pkg/test"))
