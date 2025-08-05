@@ -17,12 +17,28 @@ def run_python_file(working_directory, file_path, args=[]):
         
         task=subprocess.run(["uv", "run", file_path] + args, cwd=working_directory, capture_output=True, timeout=30)
 
+        # # Debug output
+        # print(f"DEBUG: returncode = {task.returncode}")
+        # print(f"DEBUG: stdout = {task.stdout}")
+        # print(f"DEBUG: stderr = {task.stderr}")
+        # print(f"DEBUG: stdout empty? {not task.stdout}")
+        # print(f"DEBUG: stderr empty? {not task.stderr}")
+
         if task.stdout == "" and task.stderr == "":
             return "No output produced"
-        result = f"STDOUT: {task.stdout.decode('utf-8')}\nSTDERR: {task.stderr.decode('utf-8')}"
-        if task.returncode != 0:
+        # For successful runs, just return the actual output without labels
+        if task.returncode == 0:
+            # If there's stderr content (like test results), return that
+            if task.stderr:
+                return task.stderr.decode('utf-8').strip()
+            # Otherwise return stdout
+            else:
+                return task.stdout.decode('utf-8').strip()
+        else:
+            # For failed runs, include the detailed format
+            result = f"STDOUT: {task.stdout.decode('utf-8')}\nSTDERR: {task.stderr.decode('utf-8')}"
             return result + f"\nProcess exited with code {task.returncode}"
-        return result
+        
 
         
     except Exception as e:

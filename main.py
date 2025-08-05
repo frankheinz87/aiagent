@@ -5,6 +5,7 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.write_file import schema_write_file
 from functions.run_python import schema_run_python_file
+from functions.call_function import call_function
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -49,15 +50,20 @@ All paths you provide should be relative to the working directory. You do not ne
         config = types.GenerateContentConfig(tools = [available_functions], system_instruction = system_prompt))
     
     if response.function_calls != None:
+        #print("DEBUG: Found function calls!")
         for call in response.function_calls:
-            print(f"Calling function: {call.name}({call.args})")
-    else:
-        print(response.text)
-    if len(sys.argv) > 2:
-        if sys.argv[2] == "--verbose":
-            print(f"User prompt: {sys.argv[1]}")
-            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+            #print(f"DEBUG: About to call call_function with {call.name}")
+            verbose = len(sys.argv) > 2 and sys.argv[2] == "--verbose"
+            result = call_function(call, verbose = verbose)
+            #print("DEBUG: call_function returned!")
+            if not result.parts[0].function_response.response:
+                raise Exception("Function call failed: no function_response found")
+            else:
+                if verbose:
+                    print(f"User prompt: {sys.argv[1]}")
+                    print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+                    print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+                    print(f"-> {result.parts[0].function_response.response}")
 
 if __name__ == "__main__":
     main()
