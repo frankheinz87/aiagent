@@ -43,6 +43,7 @@ def call_function(function_call_part, verbose = False):
 
         #call function
         result = actual_function(**args_with_directory)
+        
         return types.Content(
                 role="tool",
                 parts=[

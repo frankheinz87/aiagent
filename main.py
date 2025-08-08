@@ -48,7 +48,7 @@ All paths you provide should be relative to the working directory. You do not ne
         model = "gemini-2.0-flash-001", 
         contents = messages,
         config = types.GenerateContentConfig(tools = [available_functions], system_instruction = system_prompt))
-    
+
     if response.function_calls != None:
         #print("DEBUG: Found function calls!")
         for call in response.function_calls:
