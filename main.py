@@ -44,26 +44,46 @@ When a user asks a question or makes a request, make a function call plan. You c
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
-    response = client.models.generate_content(
-        model = "gemini-2.0-flash-001", 
-        contents = messages,
-        config = types.GenerateContentConfig(tools = [available_functions], system_instruction = system_prompt))
+    try:
+        counter = 20
+        while counter > 0:
+            #print(f"DEBUG: Starting loop iteration, counter = {counter}")
+            counter -= 1
+            response = client.models.generate_content(
+                model = "gemini-2.0-flash-001", 
+                contents = messages,
+                config = types.GenerateContentConfig(tools = [available_functions], system_instruction = system_prompt))
+            
+            for candidate in response.candidates:
+                messages.append(candidate.content)
 
-    if response.function_calls != None:
-        #print("DEBUG: Found function calls!")
-        for call in response.function_calls:
-            #print(f"DEBUG: About to call call_function with {call.name}")
-            verbose = len(sys.argv) > 2 and sys.argv[2] == "--verbose"
-            result = call_function(call, verbose = verbose)
-            #print("DEBUG: call_function returned!")
-            if not result.parts[0].function_response.response:
-                raise Exception("Function call failed: no function_response found")
-            else:
-                if verbose:
-                    print(f"User prompt: {sys.argv[1]}")
-                    print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-                    print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-                    print(f"-> {result.parts[0].function_response.response}")
+                
+
+            if response.function_calls:
+                #print(f"DEBUG: Function ccalls found")
+                for call in response.function_calls:
+                    #print(f"DEBUG: About to call call_function with {call.name}")
+                    verbose = len(sys.argv) > 2 and sys.argv[2] == "--verbose"
+                    result = call_function(call, verbose = verbose)
+                    messages.append(result)
+                    #print("DEBUG: call_function returned!")
+                    if not result.parts[0].function_response.response.get("result"):
+                        raise Exception("Function call failed: no function_response found")
+                    else:
+                        if verbose:
+                            print(f"User prompt: {sys.argv[1]}")
+                            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+                            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+                            print(f"-> {result.parts[0].function_response.response}")
+                    #print("DEBUG: Finished processing all function calls, continuing loop")
+            elif response.text:
+                #print("DEBUG: Found text response, breaking")
+                print(response.text)
+                break
+            #print(f"DEBUG: End of loop iteration, going to next iteration")
+            
+    except Exception as e:
+        return f"Error: executing generate content: {e}"
 
 if __name__ == "__main__":
     main()
