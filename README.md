@@ -1,0 +1,1 @@
+before you start activate venv: source .venv/bin/activate
